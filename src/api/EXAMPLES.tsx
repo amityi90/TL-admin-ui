@@ -29,8 +29,8 @@ import type { Product, Order } from '../types';
 // =====================================================
 
 export const ProductManagementExample = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_products, setProducts] = useState<Product[]>([]);
+  const [_loading, setLoading] = useState(true);
 
   // Fetch all products
   const loadProducts = async () => {
@@ -51,7 +51,7 @@ export const ProductManagementExample = () => {
   }, []);
 
   // Create a new product
-  const handleCreateProduct = async () => {
+  const _handleCreateProduct = async () => {
     try {
       const newProduct = await createProduct({
         name: 'Luxury Watch',
@@ -72,7 +72,7 @@ export const ProductManagementExample = () => {
   };
 
   // Update a product
-  const handleUpdateProduct = async (id: string) => {
+  const _handleUpdateProduct = async (id: string) => {
     try {
       const updated = await updateProduct(id, {
         name: 'Updated Product Name',
@@ -92,7 +92,7 @@ export const ProductManagementExample = () => {
   };
 
   // Delete a product
-  const handleDeleteProduct = async (id: string) => {
+  const _handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure?')) return;
     
     try {
@@ -103,6 +103,10 @@ export const ProductManagementExample = () => {
       // Error handled by adminService
     }
   };
+
+  void _handleCreateProduct;
+  void _handleUpdateProduct;
+  void _handleDeleteProduct;
 
   return null; // Your UI here
 };
@@ -160,7 +164,7 @@ export const LogisticsDashboardExample = () => {
     try {
       // Make API call
       await shipOrder(orderId, {
-        carrierName: 'FedEx',
+        carrier: 'FedEx',
         trackingNumber: 'TRACK123456'
       });
       // Success! Toast already shown
@@ -185,8 +189,10 @@ export const LogisticsDashboardExample = () => {
     }]);
 
     try {
+      const now = new Date();
       await confirmArrival(orderId, {
-        arrivalDate: new Date().toISOString()
+        arrivalDate: now.toISOString().slice(0, 10),
+        arrivalTime: now.toTimeString().slice(0, 5)
       });
     } catch (error) {
       // Rollback
@@ -286,10 +292,10 @@ export const ErrorHandlingExample = () => {
   // No need to handle manually, interceptor does it
 
   // Custom error handling if needed
-  const customErrorHandling = async () => {
+  const _customErrorHandling = async () => {
     try {
       await getProducts();
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 404) {
         console.log('Products not found');
       } else if (error.response?.status === 500) {
@@ -298,6 +304,8 @@ export const ErrorHandlingExample = () => {
       // Generic error toast already shown by adminService
     }
   };
+
+  void _customErrorHandling;
 
   return null;
 };
@@ -308,7 +316,7 @@ export const ErrorHandlingExample = () => {
 
 export const AuthExample = () => {
   // Login and store token
-  const handleLogin = async (email: string, password: string) => {
+  const _handleLogin = async (email: string, password: string) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
         method: 'POST',
@@ -319,7 +327,7 @@ export const AuthExample = () => {
       const data = await response.json();
       
       // Store token in localStorage
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('token', data?.data?.token);
       
       // All subsequent API calls will automatically include this token
       // via the request interceptor in api.ts
@@ -329,10 +337,13 @@ export const AuthExample = () => {
   };
 
   // Logout
-  const handleLogout = () => {
+  const _handleLogout = () => {
     localStorage.removeItem('token');
     window.location.href = '/login';
   };
+
+  void _handleLogin;
+  void _handleLogout;
 
   return null;
 };
