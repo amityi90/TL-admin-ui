@@ -38,14 +38,15 @@ const Inventory = () => {
         setIsFormOpen(true);
     };
 
-    const handleDeleteProduct = async (id: string) => {
+    // adminService already raises success/error toasts for every mutation, so
+    // these handlers deliberately stay silent instead of firing a second one.
+    const handleDeleteProduct = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
                 await deleteProduct(id);
                 setProducts(prev => prev.filter(p => p.id !== id));
-                toast.success('Product deleted successfully');
             } catch (error) {
-                toast.error('Failed to delete product');
+                console.error('Failed to delete product:', error);
             }
         }
     };
@@ -54,15 +55,13 @@ const Inventory = () => {
         try {
             if (editingProduct) {
                 await updateProduct(editingProduct.id, data);
-                toast.success('Product updated successfully');
             } else {
                 await createProduct(data);
-                toast.success('Product created successfully');
             }
             fetchProducts(); // Refresh list or update locally
             setIsFormOpen(false);
         } catch (error) {
-            toast.error('Failed to save product');
+            console.error('Failed to save product:', error);
         }
     };
 

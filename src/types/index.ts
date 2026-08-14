@@ -2,8 +2,7 @@ export const CATEGORIES = ['Rings', 'Necklaces', 'Earrings', 'Bracelets', 'Watch
 export type Category = typeof CATEGORIES[number];
 
 export interface Product {
-    id: string;
-    _id?: string;
+    id: number;
     name: string;
     description: string;
     price: number;
@@ -11,53 +10,48 @@ export interface Product {
     category: Category;
     material: string;
     stockCount: number;
+    createdAt?: string;
 }
 
-export type ShipmentStatus = 'Pending' | 'Shipped' | 'Arrived' | 'Archived';
-export type OrderStatus = 'pending' | 'shipped' | 'delivered' | 'arrived' | 'archived' | 'should be delivered';
+// The API emits these exact values now. The previous 'should be delivered' /
+// 'delivered' vocabulary is gone, along with the client-side translation that
+// tried to paper over it.
+export type OrderStatus = 'pending' | 'shipped' | 'arrived' | 'archived';
 
-export interface Shipment {
-    id: string;
-    _id?: string;
-    orderId: string;
-    customerName: string;
-    productIds: string[];
-    status: ShipmentStatus;
-    carrierName?: string;
-    trackingNumber?: string;
-    shippedDate?: string; // ISO date string
-    arrivalDate?: string; // ISO date string
-    archivedDate?: string; // ISO date string
-    createdAt: string; // ISO date string
+export interface OrderItem {
+    id: number;
+    productId: number | null;
+    quantity: number;
+    unitPrice: number;
+    name: string | null;
+    images: string[] | null;
 }
 
-// Order interface based on Mongoose schema (lowercase status)
 export interface Order {
-    id: string;
-    _id?: string;
-    orderId: string;
-    customerName: string;
-    customerEmail?: string;
-    productIds: string[];
+    id: number;
+    fullName: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    phone: string;
+    email?: string | null;
+    carrier?: string | null;
+    trackingNumber?: string | null;
+    arrivalAt?: string | null;
+    paymentMethod: 'Card' | 'PayPal';
+    paymentStatus: 'Pending' | 'Paid';
+    paymentIntentId?: string | null;
+    totalAmount: number;
     status: OrderStatus;
-    carrierName?: string;
-    trackingNumber?: string;
-    shippedDate?: string; // ISO date string
-    arrivalDate?: string; // ISO date string
-    archivedDate?: string; // ISO date string
-    createdAt: string; // ISO date string
-    updatedAt?: string; // ISO date string
+    createdAt: string;
+    items: OrderItem[];
 }
 
-// Tracking data for shipping
 export interface TrackingData {
     carrier: string;
     trackingNumber: string;
-    shippedDate?: string;
 }
 
-// Arrival data
 export interface ArrivalData {
-    arrivalDate: string;
-    arrivalTime: string;
+    arrivalAt: string; // ISO timestamp
 }
