@@ -1,5 +1,5 @@
 import api from '../services/api';
-import type { Product, Order, OrderStatus, TrackingData, ArrivalData } from '../types';
+import type { Product, Order, OrderStatus, TrackingData, ArrivalData, SiteContent } from '../types';
 import toast from 'react-hot-toast';
 
 type ProductPayload = Omit<Product, 'id' | 'createdAt'>;
@@ -43,6 +43,44 @@ export const uploadProductImages = async (files: File[]): Promise<string[]> => {
         const message =
             (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
             'Failed to upload image';
+        toast.error(message);
+        throw error;
+    }
+};
+
+// Named for products historically; the endpoint is generic, so section images
+// in UI Edit go through the same call.
+export const uploadImages = uploadProductImages;
+
+// ==================== SITE CONTENT (UI EDIT) ====================
+
+export const getSiteContent = async (): Promise<SiteContent[]> => {
+    try {
+        const response = await api.get<ApiSuccessResponse<SiteContent[]> | SiteContent[]>('/admin/content');
+        const items = unwrapData<SiteContent[]>(response.data);
+        return Array.isArray(items) ? items : [];
+    } catch (error) {
+        console.error('Error fetching site content:', error);
+        throw error;
+    }
+};
+
+export const updateSiteContent = async (
+    updates: { name: string; text: string }[]
+): Promise<SiteContent[]> => {
+    try {
+        const response = await api.put<ApiSuccessResponse<SiteContent[]> | SiteContent[]>(
+            '/admin/content',
+            { updates }
+        );
+        toast.success(updates.length > 1 ? `${updates.length} fields saved` : 'Saved');
+        const items = unwrapData<SiteContent[]>(response.data);
+        return Array.isArray(items) ? items : [];
+    } catch (error) {
+        console.error('Error updating site content:', error);
+        const message =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to save changes';
         toast.error(message);
         throw error;
     }

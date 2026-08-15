@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Package, Settings, LogOut } from 'lucide-react';
+import { ShoppingBag, Package, LayoutTemplate, Settings, LogOut } from 'lucide-react';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -43,7 +43,21 @@ const Sidebar = () => {
           <Package size={20} />
           ORDERS & LOGISTICS
         </NavLink>
-        
+
+        <NavLink
+          to="/ui-edit"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-4 py-3 text-sm tracking-wide transition-colors ${
+              isActive
+                ? 'text-champagne-gold bg-white/5 border-l-2 border-champagne-gold'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`
+          }
+        >
+          <LayoutTemplate size={20} />
+          UI EDIT
+        </NavLink>
+
         <div className="pt-8 mt-8 border-t border-gray-800">
              <NavLink 
                 to="/settings" 

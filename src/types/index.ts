@@ -47,6 +47,25 @@ export interface Order {
     items: OrderItem[];
 }
 
+export const CONTENT_SECTIONS = ['hero', 'collections', 'about', 'contact', 'footer'] as const;
+export type ContentSection = typeof CONTENT_SECTIONS[number];
+
+export type ContentFieldType = 'text' | 'textarea' | 'image';
+
+// Only `text` is writable; everything else is structural and comes from the
+// backend seed, so the admin can't invent a key the storefront doesn't read.
+export interface SiteContent {
+    id: number;
+    name: string;
+    text: string;
+    type: ContentFieldType;
+    section: ContentSection;
+    groupLabel: string | null;
+    label: string;
+    sortOrder: number;
+    updatedAt?: string;
+}
+
 export interface TrackingData {
     carrier: string;
     trackingNumber: string;
