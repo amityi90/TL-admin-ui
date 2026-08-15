@@ -18,6 +18,36 @@ const unwrapData = <T>(payload: ApiSuccessResponse<T> | T): T => {
     return payload as T;
 };
 
+// ==================== IMAGE UPLOAD ====================
+
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/;
+
+// Longer timeout than the 10s instance default — several images on a slow
+// connection will exceed it. Content-Type is deliberately left unset so the
+// browser can attach the multipart boundary.
+export const uploadProductImages = async (files: File[]): Promise<string[]> => {
+    try {
+        const form = new FormData();
+        files.forEach((file) => form.append('files', file));
+        const response = await api.post<ApiSuccessResponse<{ urls: string[] }> | { urls: string[] }>(
+            '/admin/uploads',
+            form,
+            { timeout: 60000 }
+        );
+        const { urls } = unwrapData<{ urls: string[] }>(response.data);
+        toast.success(files.length > 1 ? `${files.length} images uploaded` : 'Image uploaded');
+        return urls;
+    } catch (error) {
+        console.error('Error uploading images:', error);
+        const message =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to upload image';
+        toast.error(message);
+        throw error;
+    }
+};
+
 // ==================== PRODUCT SERVICES ====================
 
 export const getProducts = async (): Promise<Product[]> => {

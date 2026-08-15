@@ -1,8 +1,9 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import type { Product, Category } from "../types/index";
-import { X, Plus, Trash2 } from "lucide-react";
-import { useEffect } from "react";
+import { X, Trash2, Upload, ImagePlus, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { uploadProductImages, MAX_UPLOAD_BYTES, ALLOWED_IMAGE_MIME } from "../api/adminService";
 
 interface ProductFormProps {
   product?: Product;
@@ -24,17 +25,19 @@ type FormValues = {
   imageFiles: { value: string }[];
 };
 
+const emptyDefaults: FormValues = {
+  name: '',
+  description: '',
+  price: 0,
+  category: 'Other',
+  material: '',
+  stockCount: 0,
+  imageFiles: []
+};
+
 const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSubmit, isOpen }) => {
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<FormValues>({
-    defaultValues: {
-      name: '',
-      description: '',
-      price: 0,
-      category: 'Other',
-      material: '',
-      stockCount: 0,
-      imageFiles: [{ value: '' }]
-    }
+  const { register, handleSubmit, control, reset, watch, formState: { errors } } = useForm<FormValues>({
+    defaultValues: emptyDefaults
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -42,13 +45,49 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSubmit, i
     name: "imageFiles"
   });
 
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // useFieldArray's `fields` snapshots values at render time, so the thumbnails
+  // read from watch() to stay in step with freshly appended uploads.
+  const watchedImages = watch('imageFiles');
+
+  // Uploads immediately on pick rather than at form submit, so the admin sees
+  // the thumbnail before committing. An upload abandoned by cancelling the form
+  // leaves an unreferenced object in the bucket.
+  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // reset so re-picking the same file fires change again
+    if (files.length === 0) return;
+
+    const tooLarge = files.find((f) => f.size > MAX_UPLOAD_BYTES);
+    if (tooLarge) {
+      setUploadError(`"${tooLarge.name}" is larger than 5 MB`);
+      return;
+    }
+    const badType = files.find((f) => !ALLOWED_IMAGE_MIME.test(f.type));
+    if (badType) {
+      setUploadError(`"${badType.name}" is not a JPEG, PNG, WebP or GIF`);
+      return;
+    }
+
+    setUploadError('');
+    setUploading(true);
+    try {
+      const urls = await uploadProductImages(files);
+      urls.forEach((url) => append({ value: url }));
+    } catch {
+      // adminService already surfaced a toast with the server's message.
+      setUploadError('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   useEffect(() => {
+    setUploadError('');
     if (product) {
-        // Map product images string[] to { value: string }[] for field array
-        const mappedHelper = product.images && product.images.length > 0
-            ? product.images.map(img => ({ value: img }))
-            : [{ value: '' }];
-            
       reset({
         name: product.name,
         description: product.description,
@@ -56,18 +95,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSubmit, i
         category: product.category,
         material: product.material,
         stockCount: product.stockCount,
-        imageFiles: mappedHelper
+        imageFiles: (product.images || []).map(img => ({ value: img }))
       });
     } else {
-      reset({
-        name: '',
-        description: '',
-        price: 0,
-        category: 'Other',
-        material: '',
-        stockCount: 0,
-        imageFiles: [{ value: '' }]
-      });
+      reset(emptyDefaults);
     }
   }, [product, reset, isOpen]);
 
@@ -177,43 +208,72 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSubmit, i
           {/* Images */}
           <div className="space-y-3">
             <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Images (URLs)</label>
-                <button type="button" onClick={() => append({ value: '' })} className="text-xs font-bold text-champagne-gold flex items-center gap-1 hover:text-yellow-600 transition-colors uppercase tracking-wider">
-                    <Plus size={14} /> Add Image
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Images</label>
+                {fields.length > 0 && (
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="text-xs font-bold text-champagne-gold flex items-center gap-1 hover:text-yellow-600 transition-colors uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                        {uploading ? 'Uploading…' : 'Add Images'}
+                    </button>
+                )}
+            </div>
+
+            <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleFilesSelected}
+                className="hidden"
+            />
+
+            {fields.length === 0 ? (
+                <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full border-2 border-dashed border-gray-200 py-10 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-champagne-gold hover:text-champagne-gold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    {uploading ? <Loader2 size={24} className="animate-spin" /> : <ImagePlus size={24} />}
+                    <span className="text-xs font-bold uppercase tracking-widest">
+                        {uploading ? 'Uploading…' : 'Click to upload images'}
+                    </span>
                 </button>
-            </div>
-            
-            <div className="space-y-3">
-                {fields.map((field, index) => (
-                    <div key={field.id} className="flex gap-2 items-start group">
-                        <div className="flex-1">
-                            <input
-                                {...register(`imageFiles.${index}.value` as const, { required: "Image URL required" })}
-                                className="w-full p-3 border border-gray-200 text-sm focus:border-champagne-gold focus:ring-1 focus:ring-champagne-gold outline-none transition-all placeholder:text-gray-300"
-                                placeholder="https://example.com/image.jpg"
+            ) : (
+                <div className="grid grid-cols-3 gap-3">
+                    {fields.map((field, index) => (
+                        <div key={field.id} className="relative group aspect-square bg-gray-50 overflow-hidden">
+                            <img
+                                src={watchedImages?.[index]?.value}
+                                alt={`Product image ${index + 1}`}
+                                className="h-full w-full object-cover"
                             />
-                            {errors.imageFiles?.[index]?.value && (
-                                <p className="text-red-500 text-xs mt-1">URL is required</p>
-                            )}
+                            <button
+                                type="button"
+                                onClick={() => remove(index)}
+                                className="absolute top-1 right-1 bg-white/90 text-gray-500 hover:text-red-500 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Remove image"
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         </div>
-                        <button 
-                            type="button" 
-                            onClick={() => remove(index)} 
-                            className="text-gray-400 hover:text-red-500 p-3 flex items-center justify-center transition-colors opacity-50 group-hover:opacity-100"
-                            title="Remove image"
-                        >
-                            <Trash2 size={18} />
-                        </button>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
+
+            <p className="text-xs text-gray-400">JPEG, PNG, WebP or GIF · up to 5 MB each</p>
+            {uploadError && <p className="text-red-500 text-xs">{uploadError}</p>}
           </div>
 
           <div className="pt-8 mt-8 border-t border-gray-100 flex justify-end gap-4 bg-white/95 sticky bottom-0 py-4 backdrop-blur-sm -mx-6 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-            <button type="button" onClick={onClose} className="px-6 py-2 border border-gray-300 text-xs font-bold uppercase tracking-widest hover:bg-gray-50 transition-colors text-gray-600">
+            <button type="button" onClick={onClose} disabled={uploading} className="px-6 py-2 border border-gray-300 text-xs font-bold uppercase tracking-widest hover:bg-gray-50 transition-colors text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed">
                 Cancel
             </button>
-            <button type="submit" className="px-6 py-2 bg-deep-black text-white text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            <button type="submit" disabled={uploading} className="px-6 py-2 bg-deep-black text-white text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none">
                 {product ? 'Save Changes' : 'Create Product'}
             </button>
           </div>

@@ -134,7 +134,7 @@ const Inventory = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-4">
                                             <div className="h-12 w-12 bg-gray-100 flex-shrink-0 overflow-hidden">
-                                                {product.images[0] ? (
+                                                {product.images?.[0] ? (
                                                     <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
                                                 ) : (
                                                     <div className="h-full w-full flex items-center justify-center text-gray-300">Img</div>
