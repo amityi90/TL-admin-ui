@@ -3,7 +3,7 @@ import type { SubmitHandler } from "react-hook-form";
 import type { Product, Category } from "../types/index";
 import { X, Trash2, Upload, ImagePlus, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { uploadProductImages, MAX_UPLOAD_BYTES, ALLOWED_IMAGE_MIME } from "../api/adminService";
+import { uploadProductImages, MAX_UPLOAD_BYTES, MAX_REQUEST_BYTES, ALLOWED_IMAGE_MIME, formatMb } from "../api/adminService";
 
 interface ProductFormProps {
   product?: Product;
@@ -63,7 +63,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSubmit, i
 
     const tooLarge = files.find((f) => f.size > MAX_UPLOAD_BYTES);
     if (tooLarge) {
-      setUploadError(`"${tooLarge.name}" is larger than 5 MB`);
+      setUploadError(`"${tooLarge.name}" is larger than ${formatMb(MAX_UPLOAD_BYTES)} MB`);
+      return;
+    }
+    // The API refuses the whole request above MAX_REQUEST_BYTES, so an oversized
+    // batch is caught here rather than after uploading none of it.
+    const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+    if (totalBytes > MAX_REQUEST_BYTES) {
+      setUploadError(
+        `Those ${files.length} images total ${formatMb(totalBytes)} MB; upload ${formatMb(MAX_REQUEST_BYTES)} MB or less at a time`
+      );
       return;
     }
     const badType = files.find((f) => !ALLOWED_IMAGE_MIME.test(f.type));
@@ -265,7 +274,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSubmit, i
                 </div>
             )}
 
-            <p className="text-xs text-gray-400">JPEG, PNG, WebP or GIF · up to 5 MB each</p>
+            <p className="text-xs text-gray-400">JPEG, PNG, WebP or GIF · up to {formatMb(MAX_UPLOAD_BYTES)} MB each</p>
             {uploadError && <p className="text-red-500 text-xs">{uploadError}</p>}
           </div>
 

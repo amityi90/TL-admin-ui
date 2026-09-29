@@ -20,6 +20,7 @@ import {
     uploadImages,
     MAX_UPLOAD_BYTES,
     ALLOWED_IMAGE_MIME,
+    formatMb,
 } from '../api/adminService';
 import toast from 'react-hot-toast';
 
@@ -108,7 +109,7 @@ const UIEdit = () => {
         if (!file || !target) return;
 
         if (file.size > MAX_UPLOAD_BYTES) {
-            setUploadError(`"${file.name}" is larger than 5 MB`);
+            setUploadError(`"${file.name}" is larger than ${formatMb(MAX_UPLOAD_BYTES)} MB`);
             return;
         }
         if (!ALLOWED_IMAGE_MIME.test(file.type)) {
@@ -189,7 +190,7 @@ const UIEdit = () => {
                                 )}
                                 {uploadingName === field.name ? 'Uploading…' : 'Replace Image'}
                             </button>
-                            <p className="text-xs text-gray-400">JPEG, PNG, WebP or GIF · up to 5 MB</p>
+                            <p className="text-xs text-gray-400">JPEG, PNG, WebP or GIF · up to {formatMb(MAX_UPLOAD_BYTES)} MB</p>
                         </div>
                     </div>
                 ) : field.type === 'textarea' ? (

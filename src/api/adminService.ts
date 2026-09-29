@@ -20,12 +20,19 @@ const unwrapData = <T>(payload: ApiSuccessResponse<T> | T): T => {
 
 // ==================== IMAGE UPLOAD ====================
 
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+// Mirrors the API's per-request cap. The hosting platform refuses bodies over
+// 32 MiB, so an oversized batch has to be caught here before it is sent.
+export const MAX_REQUEST_BYTES = 30 * 1024 * 1024;
+// Shared so the limits and the messages quoting them cannot drift apart.
+export const formatMb = (bytes: number): number => Math.round(bytes / 1024 / 1024);
 export const ALLOWED_IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/;
 
 // Longer timeout than the 10s instance default — several images on a slow
 // connection will exceed it. Content-Type is deliberately left unset so the
-// browser can attach the multipart boundary.
+// browser can attach the multipart boundary. Raised to 120s alongside the larger
+// per-file limit: a full MAX_REQUEST_BYTES batch on a slow uplink needs minutes,
+// and timing out mid-transfer wastes the whole upload.
 export const uploadProductImages = async (files: File[]): Promise<string[]> => {
     try {
         const form = new FormData();
@@ -33,7 +40,7 @@ export const uploadProductImages = async (files: File[]): Promise<string[]> => {
         const response = await api.post<ApiSuccessResponse<{ urls: string[] }> | { urls: string[] }>(
             '/admin/uploads',
             form,
-            { timeout: 60000 }
+            { timeout: 120000 }
         );
         const { urls } = unwrapData<{ urls: string[] }>(response.data);
         toast.success(files.length > 1 ? `${files.length} images uploaded` : 'Image uploaded');
