@@ -1,6 +1,20 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
+/* Tailwind v4 resets buttons to the default arrow; restore the hand pointer
+   for anything clickable. Disabled controls keep their own cursor. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label[for],
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @theme {
   --color-deep-black: #000000;
   --color-pure-white: #FFFFFF;
