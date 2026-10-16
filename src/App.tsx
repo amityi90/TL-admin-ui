@@ -4,6 +4,7 @@ import Inventory from './pages/Inventory';
 import Logistics from './pages/Logistics';
 import UIEdit from './pages/UIEdit';
 import Login from './pages/Login';
+import RequireAuth from './components/RequireAuth';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -28,12 +29,19 @@ function App() {
       />
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout />}>
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <Layout />
+            </RequireAuth>
+          }
+        >
           <Route index element={<Navigate to="/inventory" replace />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="logistics" element={<Logistics />} />
           <Route path="ui-edit" element={<UIEdit />} />
-          <Route path="settings" element={<div className="p-12 text-center text-gray-400">Settings Page Placeholder</div>} />
+          <Route path="*" element={<Navigate to="/inventory" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

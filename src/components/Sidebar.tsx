@@ -1,11 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Package, LayoutTemplate, Settings, LogOut } from 'lucide-react';
+import { ShoppingBag, Package, LayoutTemplate, LogOut } from 'lucide-react';
+import { clearSession } from '../api/session';
 
 const Sidebar = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    clearSession();
     navigate('/login', { replace: true });
   };
 
@@ -58,21 +59,6 @@ const Sidebar = () => {
           UI EDIT
         </NavLink>
 
-        <div className="pt-8 mt-8 border-t border-gray-800">
-             <NavLink 
-                to="/settings" 
-                className={({ isActive }) => 
-                    `flex items-center gap-3 px-4 py-3 text-sm tracking-wide transition-colors ${
-                    isActive 
-                        ? 'text-champagne-gold bg-white/5 border-l-2 border-champagne-gold' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`
-                }
-                >
-                <Settings size={20} />
-                SETTINGS
-            </NavLink>
-        </div>
       </nav>
 
       <div className="p-4 border-t border-gray-800">

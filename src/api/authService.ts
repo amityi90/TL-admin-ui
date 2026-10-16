@@ -1,4 +1,5 @@
 import api from '../services/api';
+import { saveSession } from './session';
 
 type LoginRequest = {
     email: string;
@@ -9,6 +10,7 @@ type LoginResponse = {
     success?: boolean;
     data?: {
         token?: string;
+        user?: { email?: string };
     };
 };
 
@@ -24,6 +26,6 @@ export const loginAdmin = async (payload: LoginRequest): Promise<string> => {
         throw new Error('No token received from server');
     }
 
-    localStorage.setItem('token', token);
+    saveSession(token, response.data?.data?.user?.email);
     return token;
 };

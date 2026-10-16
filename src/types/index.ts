@@ -16,7 +16,7 @@ export interface Product {
 // The API emits these exact values now. The previous 'should be delivered' /
 // 'delivered' vocabulary is gone, along with the client-side translation that
 // tried to paper over it.
-export type OrderStatus = 'pending' | 'shipped' | 'arrived' | 'archived';
+export type OrderStatus = 'pending' | 'shipped' | 'arrived' | 'archived' | 'cancelled';
 
 export interface OrderItem {
     id: number;
@@ -33,14 +33,16 @@ export interface Order {
     address: string;
     city: string;
     postalCode: string;
+    country?: string | null; // ISO 3166-1 alpha-2
     phone: string;
     email?: string | null;
     carrier?: string | null;
     trackingNumber?: string | null;
     arrivalAt?: string | null;
-    paymentMethod: 'Card' | 'PayPal';
+    paymentMethod: 'Card' | 'PayPal' | 'Manual';
     paymentStatus: 'Pending' | 'Paid';
-    paymentIntentId?: string | null;
+    paymentProvider?: string | null;
+    paymentReference?: string | null;
     totalAmount: number;
     status: OrderStatus;
     createdAt: string;

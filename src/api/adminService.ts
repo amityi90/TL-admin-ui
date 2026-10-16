@@ -168,7 +168,7 @@ export const shipOrder = async (id: number, trackingData: TrackingData): Promise
         return unwrapData<Order>(response.data);
     } catch (error) {
         console.error('Error shipping order:', error);
-        toast.error('Failed to ship order');
+        toast.error(serverMessage(error, 'Failed to ship order'));
         throw error;
     }
 };
@@ -182,7 +182,7 @@ export const confirmArrival = async (id: number, arrivalData: ArrivalData): Prom
         return unwrapData<Order>(response.data);
     } catch (error) {
         console.error('Error confirming arrival:', error);
-        toast.error('Failed to confirm arrival');
+        toast.error(serverMessage(error, 'Failed to confirm arrival'));
         throw error;
     }
 };
@@ -194,7 +194,46 @@ export const archiveOrder = async (id: number): Promise<Order> => {
         return unwrapData<Order>(response.data);
     } catch (error) {
         console.error('Error archiving order:', error);
-        toast.error('Failed to archive order');
+        toast.error(serverMessage(error, 'Failed to archive order'));
+        throw error;
+    }
+};
+
+export const getOrder = async (id: number): Promise<Order> => {
+    try {
+        const response = await api.get<ApiSuccessResponse<Order> | Order>(`/admin/orders/${id}`);
+        return unwrapData<Order>(response.data);
+    } catch (error) {
+        console.error('Error fetching order:', error);
+        throw error;
+    }
+};
+
+// The API phrases its refusals (e.g. "Order is not paid yet"), so show those
+// rather than a generic failure.
+const serverMessage = (error: unknown, fallback: string): string =>
+    (error as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback;
+
+export const markOrderPaid = async (id: number): Promise<Order> => {
+    try {
+        const response = await api.patch<ApiSuccessResponse<Order> | Order>(`/admin/orders/${id}/mark-paid`);
+        toast.success('Payment recorded');
+        return unwrapData<Order>(response.data);
+    } catch (error) {
+        console.error('Error marking order paid:', error);
+        toast.error(serverMessage(error, 'Failed to record payment'));
+        throw error;
+    }
+};
+
+export const cancelOrder = async (id: number): Promise<Order> => {
+    try {
+        const response = await api.patch<ApiSuccessResponse<Order> | Order>(`/admin/orders/${id}/cancel`);
+        toast.success('Order cancelled and stock restored');
+        return unwrapData<Order>(response.data);
+    } catch (error) {
+        console.error('Error cancelling order:', error);
+        toast.error(serverMessage(error, 'Failed to cancel order'));
         throw error;
     }
 };
@@ -207,6 +246,7 @@ export const fetchAllOrderLists = async (): Promise<Record<OrderStatus, Order[]>
             shipped: allOrders.filter((o) => o.status === 'shipped'),
             arrived: allOrders.filter((o) => o.status === 'arrived'),
             archived: allOrders.filter((o) => o.status === 'archived'),
+            cancelled: allOrders.filter((o) => o.status === 'cancelled'),
         };
     } catch (error) {
         console.error('Error fetching all order lists:', error);

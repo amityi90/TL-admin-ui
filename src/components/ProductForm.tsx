@@ -1,5 +1,6 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
+import { CATEGORIES } from "../types/index";
 import type { Product, Category } from "../types/index";
 import { X, Trash2, Upload, ImagePlus, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -12,7 +13,7 @@ interface ProductFormProps {
   isOpen: boolean;
 }
 
-const categories: Category[] = ['Rings', 'Necklaces', 'Earrings', 'Bracelets', 'Watches', 'Other'];
+const categories: readonly Category[] = CATEGORIES;
 
 // Define form structure with mapped images
 type FormValues = {
@@ -167,7 +168,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSubmit, i
           <div className="grid grid-cols-2 gap-6">
             {/* Price */}
             <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Price ($)</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Price (USD)</label>
                 <input 
                 type="number"
                 step="0.01"

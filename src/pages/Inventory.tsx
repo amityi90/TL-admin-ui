@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, Search, Filter } from 'lucide-react';
-import type { Product } from '../types/index';
+import { CATEGORIES } from '../types/index';
+import type { Product, Category } from '../types/index';
+import { formatUSD } from '../utils/money';
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../api/adminService';
 import ProductForm from '../components/ProductForm';
 import toast from 'react-hot-toast';
@@ -11,6 +13,7 @@ const Inventory = () => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -65,9 +68,10 @@ const Inventory = () => {
         }
     };
 
-    const filteredProducts = products.filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.category.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredProducts = products.filter(p =>
+        (categoryFilter === 'all' || p.category === categoryFilter) &&
+        (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.category.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -98,10 +102,20 @@ const Inventory = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
+                <label className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-sm text-gray-600">
                     <Filter size={18} />
-                    Filter
-                </button>
+                    <select
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value as Category | 'all')}
+                        className="outline-none bg-transparent"
+                        aria-label="Filter by category"
+                    >
+                        <option value="all">All categories</option>
+                        {CATEGORIES.map((category) => (
+                            <option key={category} value={category}>{category}</option>
+                        ))}
+                    </select>
+                </label>
             </div>
 
             {/* Table */}
@@ -150,7 +164,7 @@ const Inventory = () => {
                                         <span className="px-2 py-1 bg-gray-100 text-xs rounded-full">{product.category}</span>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium text-deep-black">
-                                        ${product.price ? product.price.toLocaleString() : '0.00'}
+                                        {formatUSD(product.price)}
                                     </td>
                                     <td className="px-6 py-4 text-sm">
                                         <span className={`px-2 py-1 text-xs font-medium ${product.stockCount > 0 ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
@@ -178,7 +192,7 @@ const Inventory = () => {
                         ) : (
                              <tr>
                                 <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                    No products found. Add one to get started.
+                                    {products.length > 0 ? 'No products match this search.' : 'No products found. Add one to get started.'}
                                 </td>
                             </tr>
                         )}

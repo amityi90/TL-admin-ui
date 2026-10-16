@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { loginAdmin } from '../api/authService';
 
 const Login = () => {
     const navigate = useNavigate();
+    // RequireAuth passes the page that bounced here, so login returns to it.
+    const location = useLocation();
+    const from = (location.state as { from?: string } | null)?.from || '/inventory';
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -23,7 +26,7 @@ const Login = () => {
                 password,
             });
             toast.success('Logged in successfully');
-            navigate('/inventory', { replace: true });
+            navigate(from, { replace: true });
         } catch (error: any) {
             const message = error?.response?.data?.message ?? error?.message ?? 'Invalid credentials';
             toast.error(message);
