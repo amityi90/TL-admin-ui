@@ -32,6 +32,7 @@ export interface Order {
     fullName: string;
     address: string;
     city: string;
+    state?: string | null;
     postalCode: string;
     country?: string | null; // ISO 3166-1 alpha-2
     phone: string;
@@ -43,7 +44,14 @@ export interface Order {
     paymentStatus: 'Pending' | 'Paid';
     paymentProvider?: string | null;
     paymentReference?: string | null;
+    // totalAmount = items + shippingAmount.
     totalAmount: number;
+    shippingAmount?: number;
+    // The courier and service the customer picked and paid for at checkout.
+    shippingCarrier?: string | null;
+    shippingService?: string | null;
+    // Import tax + duty the recipient pays on delivery. Estimate only; never charged.
+    shippingEstDuties?: number | null;
     status: OrderStatus;
     createdAt: string;
     items: OrderItem[];

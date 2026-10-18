@@ -75,6 +75,10 @@ const OrderDetail = ({ order, onClose, onAction, busy = false }: OrderDetailProp
     const isPaid = order.paymentStatus === 'Paid';
     const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
     const country = countryName(order.country);
+    const shippingAmount = Number(order.shippingAmount) || 0;
+    const chosenShipping = [order.shippingCarrier, order.shippingService]
+        .filter((part, i, parts) => part && (i === 0 || part !== parts[0]))
+        .join(' — ');
 
     const actionButton = (
         action: OrderAction,
@@ -172,7 +176,7 @@ const OrderDetail = ({ order, onClose, onAction, busy = false }: OrderDetailProp
                                 <span>
                                     {order.address}
                                     <br />
-                                    {order.city} {order.postalCode}
+                                    {[order.city, order.state, order.postalCode].filter(Boolean).join(' ')}
                                     {country && (
                                         <>
                                             <br />
@@ -214,7 +218,17 @@ const OrderDetail = ({ order, onClose, onAction, busy = false }: OrderDetailProp
                                 </li>
                             ))}
                         </ul>
-                        <div className="flex justify-between items-baseline border-t border-gray-200 pt-4 mt-1">
+                        <div className="border-t border-gray-200 pt-3 mt-1 space-y-1.5 text-sm text-gray-600">
+                            <div className="flex justify-between">
+                                <span>Subtotal</span>
+                                <span>{formatUSD(order.totalAmount - shippingAmount)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Shipping{chosenShipping && ` (${chosenShipping})`}</span>
+                                <span>{shippingAmount === 0 ? 'Free' : formatUSD(shippingAmount)}</span>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-baseline pt-3">
                             <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Total (USD)</span>
                             <span className="text-xl font-serif text-deep-black">{formatUSD(order.totalAmount)}</span>
                         </div>
@@ -224,6 +238,19 @@ const OrderDetail = ({ order, onClose, onAction, busy = false }: OrderDetailProp
                     <section>
                         <SectionTitle>Shipping</SectionTitle>
                         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 text-sm">
+                            {chosenShipping && (
+                                <>
+                                    <dt className="text-gray-500 flex items-center gap-2"><CreditCard size={14} /> Customer chose</dt>
+                                    <dd className="text-deep-black">
+                                        {chosenShipping}
+                                        {order.shippingEstDuties != null && order.shippingEstDuties > 0 && (
+                                            <span className="block text-xs text-gray-400">
+                                                Est. duties {formatUSD(order.shippingEstDuties)}, paid by recipient
+                                            </span>
+                                        )}
+                                    </dd>
+                                </>
+                            )}
                             <dt className="text-gray-500 flex items-center gap-2"><Truck size={14} /> Carrier</dt>
                             <dd className="text-deep-black">{order.carrier || '—'}</dd>
                             <dt className="text-gray-500 flex items-center gap-2"><Package size={14} /> Tracking</dt>
